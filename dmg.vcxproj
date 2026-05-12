@@ -133,10 +133,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="dmg.cpp" />
+    <ClCompile Include="src\dmg.cpp" />
+    <ClCompile Include="src\memory\Cartridge.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="planning.MD" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\memory\Cartridge.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

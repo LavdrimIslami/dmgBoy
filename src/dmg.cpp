@@ -4,8 +4,12 @@
 #include <iostream>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#include "memory/Cartridge.h"
 
 int main(int argc, char* argv[]) {
+
+	Cartridge cartridge;
+	cartridge.loadROM(".\\rom\\tetris.gb");
 
     SDL_Window* window;                    // Declare a pointer
     bool done = false;
