@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 /planning.MD
 /rom/tetris.gb
+/rom/corrupted.gb
