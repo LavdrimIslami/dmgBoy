@@ -1,15 +1,18 @@
 // dmg.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
-
 #include <iostream>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include "memory/Cartridge.h"
+#include "memory/mmu.h"
 
 int main(int argc, char* argv[]) {
 
 	Cartridge cartridge;
 	cartridge.loadROM(".\\rom\\tetris.gb");
+    MMU mmu(cartridge);
+    std::cout << "\nRead address at 0x0104 returns: " << std::hex << (int)mmu.read8(0x0104) << std::endl;
+    std::cout << "\n";
     cartridge.getCartridgeType();
     cartridge.getTitle();
 

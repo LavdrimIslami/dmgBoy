@@ -21,6 +21,12 @@
     <ClCompile Include="src\memory\Cartridge.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\memory\mmu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\cpu\cpu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="planning.MD">
@@ -29,6 +35,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\memory\Cartridge.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\memory\mmu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cpu\cpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

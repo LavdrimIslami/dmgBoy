@@ -97,6 +97,11 @@ void Cartridge::loadROM(const char* filePath){
 	
 }
 
+
+const uint8_t Cartridge::read(uint16_t address) {
+	return romByteVector[address];
+}
+
 std::string Cartridge::getCartridgeType() const{
 	const std::unordered_map<uint8_t, std::string> cartridge_types = {
 	{0x00, "ROM ONLY"},
@@ -147,3 +152,4 @@ std::string Cartridge::getTitle() const {
 	std::cout << "TITLE = " << s << std::endl;
 	return s;
 }
+
