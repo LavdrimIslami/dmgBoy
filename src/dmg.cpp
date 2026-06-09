@@ -5,14 +5,18 @@
 #include <SDL3/SDL_main.h>
 #include "memory/Cartridge.h"
 #include "memory/mmu.h"
+#include "cpu/cpu.h"
 
 int main(int argc, char* argv[]) {
 
 	Cartridge cartridge;
 	cartridge.loadROM(".\\rom\\tetris.gb");
     MMU mmu(cartridge);
+    CPU cpu(mmu);
+
     std::cout << "\nRead address at 0x0104 returns: " << std::hex << (int)mmu.read8(0x0104) << std::endl;
     std::cout << "\n";
+
     cartridge.getCartridgeType();
     cartridge.getTitle();
 
@@ -46,6 +50,7 @@ int main(int argc, char* argv[]) {
         }
 
         // Do game logic, present a frame, etc.
+        cpu.step();
     }
 
     // Close and destroy the window
