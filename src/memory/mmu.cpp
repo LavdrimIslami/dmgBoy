@@ -115,6 +115,13 @@ void MMU::write8(uint16_t address, uint8_t value) {
 	}
 	else if (address >= 0xFF00 && address <= 0xFF7F) {
 		//IO need that 
+		if (address == 0xFF01) {
+			this->buffer = value;
+		}
+		if (address == 0xFF02 && value == 0x81) {
+			std::cout << this->buffer;
+			std::cout.flush();
+		}
 
 	}
 	else if (address >= 0xFF80 && address <= 0xFFFE) {

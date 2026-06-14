@@ -67,6 +67,22 @@ public:
 	uint8_t op_dec_r8();
 	uint8_t op_inc_r16();
 	uint8_t op_dec_r16();
+	uint8_t op_ld_r16_A();
+	uint8_t op_ld_HLI_A();
+	uint8_t op_ld_HLD_A();
+	uint8_t op_ld_A_r16();
+	uint8_t op_ld_n16_SP();
+	uint8_t op_jr_e8();
+	uint8_t op_jr_cc_e8();
+
+	uint8_t op_rlca();
+	uint8_t op_rrca();
+	uint8_t op_rla();
+	uint8_t op_rra();
+	uint8_t op_daa();
+	uint8_t op_cpl();
+	uint8_t op_scf();
+	uint8_t op_ccf();
 	
 
 	//block 1

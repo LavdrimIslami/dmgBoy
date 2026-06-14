@@ -10,6 +10,7 @@ private:
 	uint8_t hram[0x7F] = {};
 	uint8_t bootRom[256] = {};
 	uint8_t ie = {0};
+	uint8_t buffer = {0};
 
 public:
 	//crazy parameterized contructor 

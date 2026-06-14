@@ -10,7 +10,8 @@
 int main(int argc, char* argv[]) {
 
 	Cartridge cartridge;
-	cartridge.loadROM(".\\rom\\tetris.gb");
+	//cartridge.loadROM(".\\rom\\tetris.gb");
+    cartridge.loadROM(".\\rom\\cpu_instrs.gb");
     MMU mmu(cartridge);
     CPU cpu(mmu);
 

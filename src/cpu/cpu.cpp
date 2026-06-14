@@ -74,6 +74,14 @@ CPU::CPU(MMU& mmu) : mmu(mmu) {
 	//fill my stubs
 	fillStub();
 
+	reg.AF = 0x01B0;
+	reg.BC = 0x0013;
+	reg.DE = 0x00D8;
+	reg.HL = 0x014D;
+	reg.SP = 0xFFFE;
+	reg.PC = 0x0100;
+
+
 	instruction_table[0x00] = [this]() -> uint8_t {return op_nop();};
 
 
@@ -120,6 +128,38 @@ CPU::CPU(MMU& mmu) : mmu(mmu) {
 		instruction_table[i] = [this]() -> uint8_t {return op_dec_r16();};
 	}
 
+	//write ldr16A
+	instruction_table[0x02] = [this]()-> uint8_t {return op_ld_r16_A(); };
+	instruction_table[0x12] = [this]()-> uint8_t {return op_ld_r16_A(); };
+
+	//wire ldhl i d A
+	instruction_table[0x22] = [this]()-> uint8_t {return op_ld_HLI_A(); };
+	instruction_table[0x32] = [this]()-> uint8_t {return op_ld_HLD_A(); };
+
+	//wire opldar16
+	instruction_table[0x0A] = [this]() -> uint8_t {return op_ld_A_r16(); };
+	instruction_table[0x1A] = [this]() -> uint8_t {return op_ld_A_r16(); };
+	instruction_table[0x2A] = [this]() -> uint8_t {return op_ld_A_r16(); };
+	instruction_table[0x3A] = [this]() -> uint8_t {return op_ld_A_r16(); };
+
+
+
+	//wire opldn16sp
+	instruction_table[0x08] = [this]()->uint8_t {return op_ld_n16_SP(); };
+
+	//the 2 jrs
+	instruction_table[0x18] = [this]()->uint8_t {return op_jr_e8(); };
+
+	instruction_table[0x20] = [this]()->uint8_t {return op_jr_cc_e8(); };
+	instruction_table[0x28] = [this]()->uint8_t {return op_jr_cc_e8(); };
+	instruction_table[0x30] = [this]()->uint8_t {return op_jr_cc_e8(); };
+	instruction_table[0x38] = [this]()->uint8_t {return op_jr_cc_e8(); };
+
+
+	//rotations
+	instruction_table[0x07] = [this]()->uint8_t {return op_rlca(); };
+	instruction_table[0x0F] = [this]()->uint8_t {return op_rrca(); };
+	instruction_table[0x17] = [this]()->uint8_t {return op_rla(); };
 
 };
 
@@ -154,7 +194,7 @@ void CPU::fillStub() {
 			};
 
 		CB_table[i] = [i]() -> uint8_t {
-			std::cout << "stubbed at CB instruction: " << std::hex << i << std::endl;
+			//std::cout << "stubbed at CB instruction: " << std::hex << i << std::endl;
 			return 4;
 			};
 	}
@@ -428,3 +468,187 @@ uint8_t CPU::op_dec_r16() {
 	return 8;
 }
 
+uint8_t CPU::op_ld_r16_A() {
+	//store value in Register A into byte pointed to by r16
+	uint8_t val = (reg.AF >> 8) & 0xFF;
+
+	uint16_t destination = getRegister16((opcode >> 4) & 0x03);
+
+	mmu.write8(destination, val);
+
+	return 8;
+}
+
+uint8_t CPU::op_ld_HLI_A() { 
+	//store value in register A into the byte pointed by HL and increment HL
+	uint8_t val = (reg.AF >> 8) & 0xFF;
+
+	uint16_t destination = this->reg.HL;
+
+	mmu.write8(destination, val);
+
+	reg.HL += 1;
+
+
+	return 8; 
+}
+
+uint8_t CPU::op_ld_HLD_A() { 
+	uint8_t val = (reg.AF >> 8) & 0xFF;
+
+	uint16_t destination = this->reg.HL;
+
+	mmu.write8(destination, val);
+
+	reg.HL -= 1;
+	return 8; 
+}
+
+uint8_t CPU::op_ld_A_r16() {
+	uint8_t id = (opcode >> 4) & 0x03;
+	uint16_t add = getRegister16(id);
+
+	uint8_t res = mmu.read8(add);
+
+	setRegister(7, res);
+
+	switch (id) {
+	case 2:
+		reg.HL += 1;
+		break;
+
+	case 3:
+		reg.HL -= 1;
+		break;
+	default:
+		break;
+	}
+	return 8;
+}
+
+uint8_t CPU::op_ld_n16_SP() {
+	//Store SP & $FF at address n16 and SP >> 8 at address n16 + 1.
+
+	uint8_t lo_val = fetch();
+	uint8_t hi_val = fetch();
+
+	uint16_t address = (hi_val << 8) | lo_val;  //n16
+
+	mmu.write8(address, (reg.SP & 0xFF));
+
+	mmu.write8(address + 1, (reg.SP >> 8));
+
+	return 20;
+}
+
+uint8_t CPU::op_jr_e8() {
+
+	int8_t val = fetch();
+
+	reg.PC += val;
+
+	return 12;
+}
+
+uint8_t CPU::op_jr_cc_e8() {
+
+	int8_t val = fetch();
+
+	uint8_t cc = (opcode >> 3) & 0x03; 
+
+	switch (cc) {
+	case 0:
+		if (!getZeroFlag())
+		{
+			reg.PC += val;
+			return 12;
+		}
+		else { return 8; }
+
+	case 1:
+		if (getZeroFlag())
+		{
+			reg.PC += val;
+			return 12;
+		}
+		else { return 8; }
+
+	case 2:
+		if (!getCarryFlag())
+		{
+			reg.PC += val;
+			return 12;
+		}
+		else { return 8; }
+
+	case 3:
+		if (getCarryFlag())
+		{
+			reg.PC += val;
+			return 12;
+		}
+		else { return 8; }
+	default:
+		return 8;
+	}
+	
+}
+
+
+uint8_t CPU::op_rlca() {
+	
+	uint8_t val = getRegister(7);
+
+
+	uint8_t result = (val << 1) | (val >> 7);
+
+	setRegister(7, result);
+	
+	setCarryFlag((val >> 7) & 0x01);
+	setzeroflag(0);
+	setHalfCarryFlag(0);
+	setSubtractionFlag(0);
+
+	return 4;
+}
+
+
+uint8_t CPU::op_rrca() {
+	uint8_t val = getRegister(7);
+
+	uint8_t result = (val >> 1) | (val << 7);
+	setRegister(7, result);
+
+	setCarryFlag(val & 0x01);
+	setzeroflag(0);
+	setHalfCarryFlag(0);
+	setSubtractionFlag(0);
+
+	return 4;
+}
+
+
+uint8_t CPU::op_rla(){
+	//ion even know what it means to rotate through a flag
+	//but whatever lets learn it right here right now
+
+	uint8_t hold = getCarryFlag();
+	uint8_t val = getRegister(7);
+	uint8_t result = (val << 1) | hold;
+
+
+	setCarryFlag((val >> 7) & 0x01);
+	setRegister(7, result);
+
+	setzeroflag(0);
+	setHalfCarryFlag(0);
+	setSubtractionFlag(0);
+
+	return 4;
+	
+}
+uint8_t op_rra(){}
+uint8_t op_daa(){}
+uint8_t op_cpl(){}
+uint8_t op_scf(){}
+uint8_t op_ccf(){}
