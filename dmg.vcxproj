@@ -139,9 +139,6 @@
     <ClCompile Include="src\memory\mmu.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="planning.MD" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="src\cpu\cpu.h" />
     <ClInclude Include="src\memory\Cartridge.h" />
     <ClInclude Include="src\memory\mmu.h" />

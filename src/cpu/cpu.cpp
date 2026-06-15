@@ -160,6 +160,10 @@ CPU::CPU(MMU& mmu) : mmu(mmu) {
 	instruction_table[0x07] = [this]()->uint8_t {return op_rlca(); };
 	instruction_table[0x0F] = [this]()->uint8_t {return op_rrca(); };
 	instruction_table[0x17] = [this]()->uint8_t {return op_rla(); };
+	instruction_table[0x1F] = [this]()->uint8_t {return op_rra(); };
+	instruction_table[0x27] = [this]()->uint8_t {return op_daa(); };
+	instruction_table[0x37] = [this]()->uint8_t {return op_scf(); };
+	instruction_table[0x3F] = [this]()->uint8_t {return op_ccf(); };
 
 };
 
@@ -647,8 +651,87 @@ uint8_t CPU::op_rla(){
 	return 4;
 	
 }
-uint8_t op_rra(){}
-uint8_t op_daa(){}
-uint8_t op_cpl(){}
-uint8_t op_scf(){}
-uint8_t op_ccf(){}
+uint8_t CPU::op_rra(){
+	uint8_t hold = getCarryFlag();
+	uint8_t val = getRegister(7);
+
+	uint8_t result = (val >> 1) | (hold << 7);
+
+	setCarryFlag(val & 0x01);
+	setRegister(7, result);
+	setzeroflag(0);
+	setHalfCarryFlag(0);
+	setSubtractionFlag(0);
+
+	return 4;
+
+}
+
+
+uint8_t CPU::op_daa(){
+	uint8_t offset{ 0 };
+
+	bool shouldCarry = false;
+
+	uint8_t val = getRegister(7);
+
+	uint8_t halfCarry = getHalfCarryFlag();
+
+	uint8_t carry = getCarryFlag();
+
+	uint8_t sub = getSubtractionFlag();
+	
+	if ((sub == 0 && (val & 0xF) > 0x09) || halfCarry == 1) {
+		offset |= 0x06;
+	}
+
+	if ((sub == 0 && val > 0x99) || carry == 1) {
+		offset |= 0x60;
+		shouldCarry = true;
+	}
+
+	uint8_t output = (sub == 0) ? val += offset : val -= offset;
+
+	if (output == 0) {
+		setzeroflag(1);
+	}
+	else { setzeroflag(0); }
+
+	setCarryFlag(shouldCarry);
+
+	setHalfCarryFlag(0);
+	return 4;
+}
+uint8_t CPU::op_cpl(){
+	uint8_t val = getRegister(7);
+
+	setRegister(7, ~val);
+
+	setSubtractionFlag(1);
+	setHalfCarryFlag(1);
+	return 4;
+}
+uint8_t CPU::op_scf(){
+	setSubtractionFlag(0);
+	setHalfCarryFlag(0);
+	setCarryFlag(true);
+	return 4;
+}
+uint8_t CPU::op_ccf(){
+	setSubtractionFlag(0);
+	setHalfCarryFlag(0);
+	setCarryFlag(!getCarryFlag());
+	return 4;
+}
+
+
+uint8_t CPU::op_add_r8(){
+	
+}
+uint8_t CPU::op_adc_r8(){}
+uint8_t CPU::op_sub_r8(){}
+uint8_t CPU::op_sbc_r8(){}
+uint8_t CPU::op_and_r8(){}
+uint8_t CPU::op_xor_r8(){}
+uint8_t CPU::op_or_r8() {}
+uint8_t CPU::op_cp_r8() {}

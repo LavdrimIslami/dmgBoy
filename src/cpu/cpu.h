@@ -89,8 +89,15 @@ public:
 	uint8_t op_ld_r8_r8();
 	uint8_t op_halt();
 
-
-
+	//block 2
+	uint8_t op_add_r8();
+	uint8_t op_adc_r8();
+	uint8_t op_sub_r8();
+	uint8_t op_sbc_r8();
+	uint8_t op_and_r8();
+	uint8_t op_xor_r8();
+	uint8_t op_or_r8();
+	uint8_t op_cp_r8();
 
 	void fillStub();
 
