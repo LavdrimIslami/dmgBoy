@@ -165,6 +165,33 @@ CPU::CPU(MMU& mmu) : mmu(mmu) {
 	instruction_table[0x37] = [this]()->uint8_t {return op_scf(); };
 	instruction_table[0x3F] = [this]()->uint8_t {return op_ccf(); };
 
+	//maths
+	for (auto i = 0x80; i <= 0x87; ++i) {
+		instruction_table[i] = [this]()->uint8_t {return op_add_r8(); };
+	}
+
+	for (auto i = 0x88; i <= 0x8F; ++i) {
+		instruction_table[i] = [this]()->uint8_t {return op_adc_r8(); };
+	}
+	for (auto i = 0x90; i <= 0x97; ++i) {
+		instruction_table[i] = [this]()->uint8_t {return op_sub_r8(); };
+	}
+	for (auto i = 0x98; i <= 0x9F; ++i) {
+		instruction_table[i] = [this]()->uint8_t {return op_sbc_r8(); };
+	}
+	for (auto i = 0xA0; i <= 0xA7; ++i) {
+		instruction_table[i] = [this]()->uint8_t {return op_and_r8(); };
+	}
+	for (auto i = 0xA8; i <= 0xAF; ++i) {
+		instruction_table[i] = [this]()->uint8_t {return op_xor_r8(); };
+	}
+	for (auto i = 0xB0; i <= 0xB7; ++i) {
+		instruction_table[i] = [this]()->uint8_t {return op_or_r8(); };
+	}
+	for (auto i = 0xB8; i <= 0xBF; ++i) {
+		instruction_table[i] = [this]()->uint8_t {return op_cp_r8(); };
+	}
+	
 };
 
 uint8_t CPU::fetch(){
@@ -726,12 +753,145 @@ uint8_t CPU::op_ccf(){
 
 
 uint8_t CPU::op_add_r8(){
-	
+	uint8_t source = getRegister(opcode & 0x07);
+	uint8_t val = getRegister(7);
+
+	uint16_t result = (uint16_t)val + (uint16_t)source;
+	setCarryFlag(result > 0xFF);
+
+	setzeroflag((uint8_t)result == 0);
+
+	setHalfCarryFlag(((val & 0xF) + (source & 0xF)) > 0xF);
+
+	setSubtractionFlag(0);
+
+	setRegister(7, (uint8_t)result);
+
+	if ((opcode & 0x07) == 6) return 8;
+	return 4;
 }
-uint8_t CPU::op_adc_r8(){}
-uint8_t CPU::op_sub_r8(){}
-uint8_t CPU::op_sbc_r8(){}
-uint8_t CPU::op_and_r8(){}
-uint8_t CPU::op_xor_r8(){}
-uint8_t CPU::op_or_r8() {}
-uint8_t CPU::op_cp_r8() {}
+uint8_t CPU::op_adc_r8(){
+	//Add the value r8 plus the carry flag to A.
+	uint8_t source = getRegister(opcode & 0x07);
+	uint8_t val = getRegister(7);
+
+	uint8_t hold = getCarryFlag();
+
+	uint16_t result = (uint16_t)val + (uint16_t)source + (uint16_t)hold;
+	setCarryFlag(result > 0xFF);
+	
+
+	setzeroflag((uint8_t)result == 0);
+
+	setHalfCarryFlag(((val & 0xF) + (source & 0xF) + hold) > 0xF);
+
+	setSubtractionFlag(0);
+
+	setRegister(7, (uint8_t)result);
+
+	if ((opcode & 0x07) == 6) return 8;
+	return 4;
+}
+uint8_t CPU::op_sub_r8(){
+	//A - r8
+	uint8_t source = getRegister(opcode & 0x07); //b
+	uint8_t val = getRegister(7); //a
+
+	uint8_t result = val - source;
+
+	setzeroflag(result == 0);
+	setSubtractionFlag(1);
+
+	setHalfCarryFlag((int8_t)((val & 0xF) - (source & 0xF)) < 0);
+	setCarryFlag(source > val);
+
+	setRegister(7, result);
+
+	if ((opcode & 0x07) == 6) return 8;
+	return 4;
+}
+
+
+uint8_t CPU::op_sbc_r8(){
+	//Subtract the value in r8 and the carry flag from A.
+	uint8_t source = getRegister(opcode & 0x07); //b
+	uint8_t val = getRegister(7); //a
+
+	uint8_t hold = getCarryFlag();
+
+	uint8_t result = val - (source + hold);
+	setzeroflag(result == 0);
+	setSubtractionFlag(1);
+
+	setHalfCarryFlag((int8_t)((val & 0xF) - (source & 0xF) - hold) < 0);
+	setCarryFlag(source + hold > val);
+
+	if ((opcode & 0x07) == 6) return 8;
+	return 4;
+
+}
+uint8_t CPU::op_and_r8(){
+	//& between r8 and A
+	uint8_t source = getRegister(opcode & 0x07); //b
+	uint8_t val = getRegister(7); //a
+
+	uint8_t result = source & val;
+
+	setzeroflag(result == 0);
+	setSubtractionFlag(0);
+	setHalfCarryFlag(1);
+	setCarryFlag(0);
+
+	setRegister(7, result);
+	if ((opcode & 0x07) == 6) return 8;
+	return 4;
+
+}
+uint8_t CPU::op_xor_r8(){
+	//^ between r8 and A
+	uint8_t source = getRegister(opcode & 0x07); //b
+	uint8_t val = getRegister(7); //a
+
+	uint8_t result = source ^ val;
+
+	setzeroflag(result == 0);
+	setSubtractionFlag(0);
+	setHalfCarryFlag(0);
+	setCarryFlag(0);
+
+	setRegister(7, result);
+	if ((opcode & 0x07) == 6) return 8;
+	return 4;
+}
+uint8_t CPU::op_or_r8() {
+	// | r8 and A
+	uint8_t source = getRegister(opcode & 0x07); //b
+	uint8_t val = getRegister(7); //a
+
+	uint8_t result = source | val;
+
+	setzeroflag(result == 0);
+	setSubtractionFlag(0);
+	setHalfCarryFlag(0);
+	setCarryFlag(0);
+
+	setRegister(7, result);
+	if ((opcode & 0x07) == 6) return 8;
+	return 4;
+
+}
+uint8_t CPU::op_cp_r8() {
+	uint8_t source = getRegister(opcode & 0x07); //b
+	uint8_t val = getRegister(7); //a
+
+	uint8_t result = val - source;
+
+	setzeroflag(result == 0);
+	setSubtractionFlag(1);
+
+	setHalfCarryFlag((int8_t)((val & 0xF) - (source & 0xF)) < 0);
+	setCarryFlag(source > val);
+
+	if ((opcode & 0x07) == 6) return 8;
+	return 4;
+}

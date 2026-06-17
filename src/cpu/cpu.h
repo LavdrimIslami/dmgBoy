@@ -99,6 +99,16 @@ public:
 	uint8_t op_or_r8();
 	uint8_t op_cp_r8();
 
+	//block 3
+	uint8_t op_add_n8();
+	uint8_t op_adc_n8();
+	uint8_t op_sub_n8();
+	uint8_t op_sbc_n8();
+	uint8_t op_and_n8();
+	uint8_t op_xor_n8();
+	uint8_t op_or_n8();
+	uint8_t op_cp_n8();
+
 	void fillStub();
 
 };  
