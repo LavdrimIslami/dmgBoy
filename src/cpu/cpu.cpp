@@ -191,7 +191,42 @@ CPU::CPU(MMU& mmu) : mmu(mmu) {
 	for (auto i = 0xB8; i <= 0xBF; ++i) {
 		instruction_table[i] = [this]()->uint8_t {return op_cp_r8(); };
 	}
+
+
+	//g3 stuff
+	instruction_table[0xC6] = [this]()->uint8_t {return op_add_n8(); };
+	instruction_table[0xCE] = [this]()->uint8_t {return op_adc_n8(); };
+	instruction_table[0xD6] = [this]()->uint8_t {return op_sub_n8(); };
+	instruction_table[0xDE] = [this]()->uint8_t {return op_sbc_n8(); };
+	instruction_table[0xE6] = [this]()->uint8_t {return op_and_n8(); };
+	instruction_table[0xEE] = [this]()->uint8_t {return op_xor_n8(); };
+	instruction_table[0xF6] = [this]()->uint8_t {return op_or_n8(); };
+	instruction_table[0xFE] = [this]()->uint8_t {return op_cp_n8(); };
+
+	instruction_table[0xC3] = [this]()->uint8_t {return op_jp_n16(); };
+	instruction_table[0xE9] = [this]()->uint8_t {return op_jp_HL(); };
+
+	for (auto i = 0xC2; i <= 0xDA; i += 0x08) {
+		instruction_table[i] = [this]()->uint8_t {return op_jp_cc_n16(); };
+	}
+
+	for (auto i = 0xC4; i <= 0xDC; i += 0x08) {
+		instruction_table[i] = [this]()->uint8_t {return op_call_cc_n16(); };
+	}
 	
+	instruction_table[0xC9] = [this]()->uint8_t {return op_ret(); };
+	
+	for (auto i = 0xC0; i <= 0xD8; i += 0x08) {
+		instruction_table[i] = [this]()->uint8_t {return op_ret_cc(); };
+	}
+	
+	for (auto i = 0xC7; i <= 0xFF; i += 0x08) {
+		instruction_table[i] = [this]()->uint8_t {return op_rst(); };
+	}
+
+	instruction_table[0xD9] = [this]()->uint8_t {return op_reti(); };
+
+
 };
 
 uint8_t CPU::fetch(){
@@ -895,3 +930,369 @@ uint8_t CPU::op_cp_r8() {
 	if ((opcode & 0x07) == 6) return 8;
 	return 4;
 }
+
+uint8_t CPU::op_add_n8(){
+	uint8_t source = fetch();
+	uint8_t val = getRegister(7);
+
+	uint16_t result = uint16_t(val + source);
+	
+	setzeroflag((uint8_t)result == 0);
+
+	setHalfCarryFlag(((val & 0xF) + (source & 0xF)) > 0xF);
+
+	setSubtractionFlag(0);
+	setCarryFlag(result > 0xFF);
+
+	setRegister(7, (uint8_t)result);
+
+	return 8;
+}
+uint8_t CPU::op_adc_n8(){
+	uint8_t source = fetch();
+	uint8_t val = getRegister(7);
+
+	uint8_t hold = getCarryFlag();
+
+	uint16_t result = (uint16_t)val + (uint16_t)source + (uint16_t)hold;
+	setCarryFlag(result > 0xFF);
+
+
+	setzeroflag((uint8_t)result == 0);
+
+	setHalfCarryFlag(((val & 0xF) + (source & 0xF) + hold) > 0xF);
+
+	setSubtractionFlag(0);
+
+	setRegister(7, (uint8_t)result);
+
+	return 8;
+}
+uint8_t CPU::op_sub_n8(){
+	uint8_t source = fetch();
+	uint8_t val = getRegister(7); //a
+
+	uint8_t result = val - source;
+
+	setzeroflag(result == 0);
+	setSubtractionFlag(1);
+
+	setHalfCarryFlag((int8_t)((val & 0xF) - (source & 0xF)) < 0);
+	setCarryFlag(source > val);
+
+	setRegister(7, result);
+	
+	return 8;
+}
+uint8_t CPU::op_sbc_n8(){
+	uint8_t source = fetch();
+	uint8_t val = getRegister(7); //a
+
+	uint8_t hold = getCarryFlag();
+
+	uint8_t result = val - (source + hold);
+	setzeroflag(result == 0);
+	setSubtractionFlag(1);
+
+	setHalfCarryFlag((int8_t)((val & 0xF) - (source & 0xF) - hold) < 0);
+	setCarryFlag(source + hold > val);
+
+	setRegister(7, result);
+
+	return 8;
+}
+uint8_t CPU::op_and_n8(){
+	uint8_t source = fetch();
+	uint8_t val = getRegister(7); //a
+
+	uint8_t result = source & val;
+
+	setzeroflag(result == 0);
+	setSubtractionFlag(0);
+	setHalfCarryFlag(1);
+	setCarryFlag(0);
+
+	setRegister(7, result);
+
+	return 8;
+}
+uint8_t CPU::op_xor_n8(){
+	uint8_t source = fetch();
+	uint8_t val = getRegister(7); //a
+
+	uint8_t result = source ^ val;
+
+	setzeroflag(result == 0);
+	setSubtractionFlag(0);
+	setHalfCarryFlag(0);
+	setCarryFlag(0);
+
+	setRegister(7, result);
+	return 8;
+}
+uint8_t CPU::op_or_n8(){
+	// | r8 and A
+	uint8_t source = fetch();
+	uint8_t val = getRegister(7); //a
+
+	uint8_t result = source | val;
+
+	setzeroflag(result == 0);
+	setSubtractionFlag(0);
+	setHalfCarryFlag(0);
+	setCarryFlag(0);
+
+	setRegister(7, result);
+
+	return 8;
+}
+uint8_t CPU::op_cp_n8(){
+	uint8_t source = fetch();
+	uint8_t val = getRegister(7); //a
+
+	uint8_t result = val - source;
+
+	setzeroflag(result == 0);
+	setSubtractionFlag(1);
+
+	setHalfCarryFlag((int8_t)((val & 0xF) - (source & 0xF)) < 0);
+	setCarryFlag(source > val);
+	return 8;
+}
+
+uint8_t CPU::op_jp_cc_n16(){
+	uint8_t lo_val = fetch();
+	uint8_t hi_val = fetch();
+
+	uint16_t val = (hi_val << 8) | lo_val;
+	uint8_t cc = (opcode >> 3) & 0x03;
+
+	switch(cc){
+	case 0:
+		if (!getZeroFlag())
+		{
+			reg.PC = val;
+			return 16;
+		}
+		else { return 12; }
+
+	case 1:
+		if (getZeroFlag())
+		{
+			reg.PC = val;
+			return 16;
+		}
+		else { return 12; }
+
+	case 2:
+		if (!getCarryFlag())
+		{
+			reg.PC = val;
+			return 16;
+		}
+		else { return 12; }
+
+	case 3:
+		if (getCarryFlag())
+		{
+			reg.PC = val;
+			return 16;
+		}
+		else { return 12; }
+	default:
+		return 12;
+}
+}
+
+uint8_t CPU::op_jp_n16(){
+
+	uint8_t lo_val = fetch();
+	uint8_t hi_val = fetch();
+
+	uint16_t val = (hi_val << 8) | lo_val;
+
+	reg.PC = val;
+
+	return 16;
+}
+uint8_t CPU::op_jp_HL(){
+	
+	reg.PC = reg.HL;
+
+	return 4;
+}
+uint8_t CPU::op_call_cc_n16(){
+	uint8_t lo_val = fetch();
+	uint8_t hi_val = fetch();
+
+	uint16_t val = (hi_val << 8) | lo_val;
+	uint8_t cc = (opcode >> 3) & 0x03;
+
+	switch (cc) {
+	case 0:
+		if (!getZeroFlag())
+		{
+			reg.SP--;
+			mmu.write8(reg.SP, reg.PC >> 8);
+			reg.SP--;
+			mmu.write8(reg.SP, reg.PC & 0xFF);
+
+			reg.PC = val;
+			return 24;
+		}
+		else { return 12; }
+
+	case 1:
+		if (getZeroFlag())
+		{
+			reg.SP--;
+			mmu.write8(reg.SP, reg.PC >> 8);
+			reg.SP--;
+			mmu.write8(reg.SP, reg.PC & 0xFF);
+
+			reg.PC = val;
+			return 24;
+		}
+		else { return 12; }
+
+	case 2:
+		if (!getCarryFlag())
+		{
+			reg.SP--;
+			mmu.write8(reg.SP, reg.PC >> 8);
+			reg.SP--;
+			mmu.write8(reg.SP, reg.PC & 0xFF);
+
+			reg.PC = val;
+			return 24;
+		}
+		else { return 12; }
+
+	case 3:
+		if (getCarryFlag())
+		{
+			reg.SP--;
+			mmu.write8(reg.SP, reg.PC >> 8);
+			reg.SP--;
+			mmu.write8(reg.SP, reg.PC & 0xFF);
+
+			reg.PC = val;
+			return 24;
+		}
+		else { return 12; }
+	default:
+		return 12;
+	}
+}
+uint8_t CPU::op_call_n16(){
+	uint8_t lo_val = fetch();
+	uint8_t hi_val = fetch();
+
+	uint16_t val = (hi_val << 8) | lo_val;
+
+	reg.SP--;
+	mmu.write8(reg.SP, reg.PC >> 8);
+	reg.SP--;
+	mmu.write8(reg.SP, reg.PC & 0xFF);
+
+	reg.PC = val;
+	return 24;
+}
+
+uint8_t CPU::op_ret() {
+	uint8_t lo_val = mmu.read8(reg.SP);
+	reg.SP++;
+	uint8_t hi_val = mmu.read8(reg.SP);
+	reg.SP++;
+
+	uint16_t val = (hi_val << 8) | lo_val;;
+	reg.PC = val;
+	return 16;
+}
+uint8_t CPU::op_ret_cc() {
+	uint8_t lo_val;
+	uint8_t hi_val;
+	uint16_t val;
+	uint8_t cc = (opcode >> 3) & 0x03;
+
+	switch (cc) {
+	case 0:
+		if (!getZeroFlag()) {
+			lo_val = mmu.read8(reg.SP); reg.SP++;
+			hi_val = mmu.read8(reg.SP); reg.SP++;
+			val = (hi_val << 8) | lo_val;
+			reg.PC = val;
+			return 20;
+		}
+		else { return 8; }
+
+	case 1:
+		if (getZeroFlag()) {
+			lo_val = mmu.read8(reg.SP); reg.SP++;
+			hi_val = mmu.read8(reg.SP); reg.SP++;
+			val = (hi_val << 8) | lo_val;
+			reg.PC = val;
+			return 20;
+		}
+		else { return 8; } 
+	case 2:
+		if(!getCarryFlag()){
+			lo_val = mmu.read8(reg.SP); reg.SP++;
+			hi_val = mmu.read8(reg.SP); reg.SP++;
+			val = (hi_val << 8) | lo_val;
+			reg.PC = val;
+			return 20;
+		}
+		else { return 8; }
+	case 3:
+		if(getCarryFlag()){
+			lo_val = mmu.read8(reg.SP); reg.SP++;
+			hi_val = mmu.read8(reg.SP); reg.SP++;
+			val = (hi_val << 8) | lo_val;
+			reg.PC = val;
+			return 20;
+		}
+		else { return 8; }
+	default: return 8;
+	}
+}
+
+uint8_t CPU::op_rst() {
+	uint8_t val = (opcode & 0x38);
+	reg.SP--;
+	mmu.write8(reg.SP, reg.PC >> 8);
+	reg.SP--;
+	mmu.write8(reg.SP, reg.PC & 0xFF);
+
+	reg.PC = val;
+	return 16;
+}
+
+uint8_t CPU::op_reti() {
+	// TODO: set IME = true when interrupts are implemented
+	return op_ret();
+}
+
+uint8_t CPU::op_pop_r16() {
+	uint8_t lo_val = mmu.read8(reg.SP);
+	reg.SP++;
+	uint8_t hi_val = mmu.read8(reg.SP);
+	reg.SP++;
+	uint16_t val = (hi_val << 8) | lo_val;
+
+	reg.PC = val;
+
+	return 12;
+}
+uint8_t CPU::op_push_r16(){}
+uint8_t CPU::op_ldh_C_A(){}
+uint8_t CPU::op_ldh_n8_A(){}
+uint8_t CPU::op_ld_n16_A(){}
+uint8_t CPU::op_ldh_A_C(){}
+uint8_t CPU::op_ldh_A_n8(){}
+uint8_t CPU::op_ld_A_n16(){}
+uint8_t CPU::op_add_SP_e8(){}
+uint8_t CPU::op_ld_HL_SP_e8(){}
+uint8_t CPU::op_ld_SP_HL(){}
+uint8_t CPU::op_di(){}
+uint8_t CPU::op_ei(){}

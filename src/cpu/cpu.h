@@ -109,6 +109,31 @@ public:
 	uint8_t op_or_n8();
 	uint8_t op_cp_n8();
 
+	uint8_t op_ret_cc();
+	uint8_t op_ret();
+	uint8_t op_reti();
+	uint8_t op_jp_cc_n16();
+	uint8_t op_jp_n16();
+	uint8_t op_jp_HL();
+	uint8_t op_call_cc_n16();
+	uint8_t op_call_n16();
+	uint8_t op_rst();
+
+	uint8_t op_pop_r16();
+	uint8_t op_push_r16();
+	uint8_t op_ldh_C_A();
+	uint8_t op_ldh_n8_A();
+	uint8_t op_ld_n16_A();
+	uint8_t op_ldh_A_C();
+	uint8_t op_ldh_A_n8();
+	uint8_t op_ld_A_n16();
+	uint8_t op_add_SP_e8();
+	uint8_t op_ld_HL_SP_e8();
+	uint8_t op_ld_SP_HL();
+	uint8_t op_di();
+	uint8_t op_ei();
+
+
 	void fillStub();
 
 };  
