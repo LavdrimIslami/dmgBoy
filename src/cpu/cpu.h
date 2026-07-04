@@ -34,6 +34,8 @@ private:
 
 	uint8_t opcode;
 
+	bool IME;
+
 
 public:
 	CPU(MMU& mmu);
@@ -120,7 +122,9 @@ public:
 	uint8_t op_rst();
 
 	uint8_t op_pop_r16();
+	uint8_t op_pop_af();
 	uint8_t op_push_r16();
+	uint8_t op_push_af();
 	uint8_t op_ldh_C_A();
 	uint8_t op_ldh_n8_A();
 	uint8_t op_ld_n16_A();
@@ -128,10 +132,25 @@ public:
 	uint8_t op_ldh_A_n8();
 	uint8_t op_ld_A_n16();
 	uint8_t op_add_SP_e8();
+	uint8_t op_add_HL_r16();
 	uint8_t op_ld_HL_SP_e8();
 	uint8_t op_ld_SP_HL();
 	uint8_t op_di();
 	uint8_t op_ei();
+
+
+	//cb table
+	uint8_t op_rlc_r8();
+	uint8_t op_rrc_r8();
+	uint8_t op_rl_r8();
+	uint8_t op_rr_r8();
+	uint8_t op_sla_r8();
+	uint8_t op_sra_r8();
+	uint8_t op_swap_r8();
+	uint8_t op_srl_r8();
+	uint8_t op_bit_b_r8();
+	uint8_t op_res_b_r8();
+	uint8_t op_set_b_r8();
 
 
 	void fillStub();
