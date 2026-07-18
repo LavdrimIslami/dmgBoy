@@ -34,6 +34,7 @@ private:
 
 	uint8_t opcode;
 
+	bool IME_SCHEDULE;
 	bool IME;
 
 

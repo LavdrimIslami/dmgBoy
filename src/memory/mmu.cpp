@@ -57,6 +57,15 @@ uint8_t MMU::read8(uint16_t address) {
 	}
 	else if (address >= 0xFF00 && address <= 0xFF7F) {
 		//IO need that 
+		if (address == 0xFF0F) {
+			return if_reg | 0xE0;   // upper 3 bits always read as 1
+		}
+		if (address == 0xFF01) {
+			return this->buffer;
+		}
+		if (address == 0xFF04) {
+			return 0xFF;
+		}
 		return 0xFF;
 	}
 	else if (address >= 0xFF80 && address <= 0xFFFE) {
@@ -115,12 +124,21 @@ void MMU::write8(uint16_t address, uint8_t value) {
 	}
 	else if (address >= 0xFF00 && address <= 0xFF7F) {
 		//IO need that 
+		if (address == 0xFF0F) {
+			if_reg = value & 0x1F;  // only lower 5 bits are writable
+			return;
+		}
 		if (address == 0xFF01) {
 			this->buffer = value;
 		}
 		if (address == 0xFF02 && value == 0x81) {
 			std::cout << this->buffer;
 			std::cout.flush();
+			serialOutput += this->buffer;
+			if (serialOutput.find("Passed") != std::string::npos ||
+				serialOutput.find("Failed") != std::string::npos) {
+				exit(0);
+			}
 		}
 
 	}
@@ -135,4 +153,11 @@ void MMU::write8(uint16_t address, uint8_t value) {
 	else {
 
 	}
+}
+
+void MMU::requestInterrupt(uint8_t bit) {
+	if_reg |= (1 << bit);
+}
+void MMU::clearInterrupt(uint8_t bit) {
+	if_reg &= ~(1 << bit);
 }

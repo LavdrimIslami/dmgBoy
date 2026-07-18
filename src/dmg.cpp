@@ -8,10 +8,9 @@
 #include "cpu/cpu.h"
 
 int main(int argc, char* argv[]) {
-
 	Cartridge cartridge;
 	//cartridge.loadROM(".\\rom\\tetris.gb");
-    cartridge.loadROM(".\\rom\\cpu_instrs.gb");
+    cartridge.loadROM(".\\rom\\02-interrupts.gb");
     MMU mmu(cartridge);
     CPU cpu(mmu);
 
@@ -40,18 +39,25 @@ int main(int argc, char* argv[]) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create window: %s\n", SDL_GetError());
         return 1;
     }
-
+    uint64_t steps = 0;
+    int frameCount = { 0 };
     while (!done) {
-        SDL_Event event;
+        uint8_t cycles = cpu.step();
+        steps++;
 
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_EVENT_QUIT) {
-                done = true;
-            }
+        if (steps > 500000000ULL) {
+            std::cout << "\n[TIMEOUT - 500M steps reached]\n";
+            break;
         }
 
-        // Do game logic, present a frame, etc.
-        cpu.step();
+        if (frameCount++ % 1000000 == 0) {
+            SDL_Event event;
+            while (SDL_PollEvent(&event)) {
+                if (event.type == SDL_EVENT_QUIT) {
+                    done = true;
+                }
+            }
+        }
     }
 
     // Close and destroy the window
