@@ -7,4 +7,6 @@ private:
 
 public:
 
+	uint8_t tick(uint8_t cycles);
+
 };
