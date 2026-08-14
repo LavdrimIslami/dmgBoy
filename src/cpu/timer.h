@@ -3,10 +3,12 @@
 
 class timer {
 private:
-	timer(MMU& mmu);
+	
+
+	uint16_t counter = { 0 };
 
 public:
-
+	timer(MMU& mmu);
 	uint8_t tick(uint8_t cycles);
 
 };

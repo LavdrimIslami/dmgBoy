@@ -1,9 +1,12 @@
 #include "mmu.h"
 #include "Cartridge.h"
 #include <iostream>
+#include "..//cpu/timer.h"
 
 
 MMU::MMU(Cartridge& cartridge) : cart(cartridge) {}
+
+
 
 
 uint8_t MMU::read8(uint16_t address) {

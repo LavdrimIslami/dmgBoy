@@ -331,6 +331,8 @@ uint8_t CPU::step() {
 
 		cycles += 20;
 	}
+	
+
 	return cycles;
 }
 

@@ -45,11 +45,6 @@ int main(int argc, char* argv[]) {
         uint8_t cycles = cpu.step();
         steps++;
 
-        if (steps > 500000000ULL) {
-            std::cout << "\n[TIMEOUT - 500M steps reached]\n";
-            break;
-        }
-
         if (frameCount++ % 1000000 == 0) {
             SDL_Event event;
             while (SDL_PollEvent(&event)) {
