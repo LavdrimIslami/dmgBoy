@@ -134,12 +134,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\cpu\cpu.cpp" />
+    <ClCompile Include="src\cpu\timer.cpp" />
     <ClCompile Include="src\dmg.cpp" />
     <ClCompile Include="src\memory\Cartridge.cpp" />
     <ClCompile Include="src\memory\mmu.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\cpu\cpu.h" />
+    <ClInclude Include="src\cpu\timer.h" />
     <ClInclude Include="src\memory\Cartridge.h" />
     <ClInclude Include="src\memory\mmu.h" />
   </ItemGroup>

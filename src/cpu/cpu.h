@@ -36,6 +36,7 @@ private:
 
 	bool IME_SCHEDULE;
 	bool IME;
+	bool halted = false;
 
 
 public:

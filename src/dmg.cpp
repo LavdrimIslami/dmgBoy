@@ -10,7 +10,8 @@
 int main(int argc, char* argv[]) {
 	Cartridge cartridge;
 	//cartridge.loadROM(".\\rom\\tetris.gb");
-    cartridge.loadROM(".\\rom\\02-interrupts.gb");
+    cartridge.loadROM(".\\rom\\cpu_instrs.gb");
+
     MMU mmu(cartridge);
     CPU cpu(mmu);
 
@@ -27,7 +28,7 @@ int main(int argc, char* argv[]) {
 
     // Create an application window with the following settings:
     window = SDL_CreateWindow(
-        "An SDL3 window",                  // window title
+        "DMGBoy ",                  // window title
         640,                               // width, in pixels
         480,                               // height, in pixels
         SDL_WINDOW_RESIZABLE                  // flags - see below

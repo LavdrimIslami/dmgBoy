@@ -299,41 +299,53 @@ uint8_t CPU::step() {
 	uint8_t cycles;
 	bool pending = IME_SCHEDULE;
 	IME_SCHEDULE = false;
-	opcode = fetch(); 
-	if (pending) IME = true;
-	if (opcode == 0xCB) {
+
+	
+	if (!halted) {
+		
 		opcode = fetch();
-		cycles =  CB_table[opcode]();
-	}
-	else {
-		cycles =  instruction_table[opcode]();
-	}	
+		if (pending) IME = true;
+		if (opcode == 0xCB) {
+			opcode = fetch();
+			cycles = CB_table[opcode]();
+		}
+		else {
+			cycles = instruction_table[opcode]();
+		}
+		if (IME && (mmu.read8(0xFFFF) & mmu.read8(0xFF0F) & 0x1F) != 0) {
+			uint8_t low = (mmu.read8(0xFFFF) & mmu.read8(0xFF0F)) & -(mmu.read8(0xFFFF) & mmu.read8(0xFF0F));
 
+			mmu.write8(0xFF0F, mmu.read8(0xFF0F) & ~low);
 
-	if (IME && (mmu.read8(0xFFFF) & mmu.read8(0xFF0F) & 0x1F) != 0) {
-		uint8_t low = (mmu.read8(0xFFFF) & mmu.read8(0xFF0F)) & -(mmu.read8(0xFFFF) & mmu.read8(0xFF0F));
+			IME = false;
 
-		mmu.write8(0xFF0F, mmu.read8(0xFF0F) & ~low);
+			reg.SP--;
+			mmu.write8(reg.SP, reg.PC >> 8);
+			reg.SP--;
+			mmu.write8(reg.SP, reg.PC & 0xFF);
+			switch (low) {
+			case 0x01: reg.PC = 0x0040; break;  // VBlank
+			case 0x02: reg.PC = 0x0048; break;  // LCD STAT
+			case 0x04: reg.PC = 0x0050; break;  // Timer
+			case 0x08: reg.PC = 0x0058; break;  // Serial
+			case 0x10: reg.PC = 0x0060; break;  // Joypad
+			}
 
-		IME = false;
-
-		reg.SP--;
-		mmu.write8(reg.SP, reg.PC >> 8);
-		reg.SP--;
-		mmu.write8(reg.SP, reg.PC & 0xFF);
-		switch (low) {
-		case 0x01: reg.PC = 0x0040; break;  // VBlank
-		case 0x02: reg.PC = 0x0048; break;  // LCD STAT
-		case 0x04: reg.PC = 0x0050; break;  // Timer
-		case 0x08: reg.PC = 0x0058; break;  // Serial
-		case 0x10: reg.PC = 0x0060; break;  // Joypad
+			cycles += 20;
 		}
 
-		cycles += 20;
-	}
-	
+		mmu.tick(cycles);
 
-	return cycles;
+		return cycles;
+	}
+	else {
+		cycles = 4;
+		if ((mmu.read8(0xFFFF) & mmu.read8(0xFF0F) & 0x1F) != 0) {
+			halted = false;
+		}
+		mmu.tick(cycles);
+		return cycles;
+	}
 }
 
 void CPU::fillStub() {
@@ -495,14 +507,9 @@ uint8_t CPU::op_ld_r8_r8() {
 }
 
 uint8_t CPU::op_halt() {
-	//case for ime being called
-
-	//ime not called
-
-	//whatever
+	halted = true;
 	
 	return 4; 
-
 }
 
 //group 0

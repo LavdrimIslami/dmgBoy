@@ -67,7 +67,16 @@ uint8_t MMU::read8(uint16_t address) {
 			return this->buffer;
 		}
 		if (address == 0xFF04) {
-			return 0xFF;
+			return timer_.getDIV();
+		}
+		if (address == 0xFF05) {
+			return timer_.getTIMA();
+		}
+		if (address == 0xFF06) {
+			return timer_.getTMA();
+		}
+		if (address == 0xFF07) {
+			return timer_.getTAC();
 		}
 		return 0xFF;
 	}
@@ -143,6 +152,20 @@ void MMU::write8(uint16_t address, uint8_t value) {
 				exit(0);
 			}
 		}
+		if (address == 0xFF04) {
+			if (timer_.handleDIV()) {
+				requestInterrupt(2);
+			}
+		}
+		if (address == 0xFF05) {
+			timer_.setTIMA(value);
+		}
+		if (address == 0xFF06) {
+			timer_.setTMA(value);
+		}
+		if (address == 0xFF07) {
+			timer_.setTAC(value);
+		}
 
 	}
 	else if (address >= 0xFF80 && address <= 0xFFFE) {
@@ -163,4 +186,11 @@ void MMU::requestInterrupt(uint8_t bit) {
 }
 void MMU::clearInterrupt(uint8_t bit) {
 	if_reg &= ~(1 << bit);
+}
+
+void MMU::tick(uint8_t cycles) {
+	if (timer_.tick(cycles)) {
+		requestInterrupt(2);
+	}
+
 }

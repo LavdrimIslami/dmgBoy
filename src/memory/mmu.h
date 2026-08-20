@@ -1,9 +1,12 @@
 #pragma once
 #include <cstdint>
 #include "Cartridge.h"
+#include "../cpu/timer.h"
 
 class MMU {
 private:
+	timer timer_;
+
 	bool romEnabled_FLAG = true;
 	Cartridge& cart;
 	uint8_t wram[0x2000] = {};
@@ -14,10 +17,14 @@ private:
 	uint8_t buffer = {0};
 	std::string serialOutput;
 
+	
+
 public:
 	//crazy parameterized contructor 
 	MMU(Cartridge& cartridge);
-	
+
+	void tick(uint8_t cycles);
+
 	uint8_t read8(uint16_t address);
 	void write8(uint16_t address, uint8_t value);
 
