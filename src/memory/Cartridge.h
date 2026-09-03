@@ -8,6 +8,7 @@ class Cartridge
 {
 private:
 	std::vector<uint8_t> romByteVector;
+	std::vector<uint8_t> ramByteVector;
 
 	struct headerBytes {
 		uint8_t entryPoint[4];
@@ -28,7 +29,12 @@ private:
 	};
 
 	headerBytes header;
-
+	uint16_t numRomBanks{0};
+	uint16_t numRamBanks{0};
+	bool ramEnabled{ false };
+	uint8_t romBankLow{ 1 };   // NOT 0 — hardware reset state is bank 1
+	uint8_t bankReg2{ 0 };
+	bool modeSelect{ false };
 
 public:
 	void loadROM(const char* filePath);

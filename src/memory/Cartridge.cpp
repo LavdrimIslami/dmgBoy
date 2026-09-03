@@ -5,8 +5,7 @@
 #include <iterator>
 #include <string>
 #include <unordered_map>
-
-
+#include <vector>
 
 void Cartridge::loadROM(const char* filePath){
 	std::ifstream file(filePath, std::ios::binary);
@@ -73,6 +72,34 @@ void Cartridge::loadROM(const char* filePath){
 	//ramsize
 	this->header.ramSize = romByteVector[0x0149];
 
+	numRomBanks = 2 << header.romSize;
+	
+	switch (this->header.ramSize) {
+		
+	case 0x00:
+		numRamBanks = 0;
+		break;
+	case 0x01:
+		numRamBanks = 0;
+		break;
+	case 0x02:
+		numRamBanks = 1;
+		break;
+	case 0x03:
+		numRamBanks = 4;
+		break;
+	case 0x04:
+		numRamBanks = 16;
+		break;
+	case 0x05:
+		numRamBanks = 8;
+		break;
+	default:
+		break;
+	}
+
+	ramByteVector.resize(numRamBanks * 0x2000, 0);
+
 	//destcode
 	this->header.destinationCode = romByteVector[0x014A];
 
@@ -86,6 +113,7 @@ void Cartridge::loadROM(const char* filePath){
 	//header checksum
 	//if byte at $014D != lower 8 bits of checksum, rom locks and cartridge wont work
 	std::cout << "Calculating header checksum..." << std::endl;
+	std::cout<<"Rom Banks: "<< numRomBanks << std::endl;
 
 	this->header.headerChecksum = 0;
 
@@ -152,4 +180,11 @@ std::string Cartridge::getTitle() const {
 	std::cout << "TITLE = " << s << std::endl;
 	return s;
 }
+
+//Cartridge::Cartridge():ramByteVector()
+//{
+//    // set appropriate RAM size for your cartridge
+//    const size_t ramSize = 8192; // replace with correct size or a member variable
+//    ramByteVector.resize(ramSize);
+//}
 

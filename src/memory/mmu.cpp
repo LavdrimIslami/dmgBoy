@@ -7,10 +7,7 @@
 MMU::MMU(Cartridge& cartridge) : cart(cartridge) {}
 
 
-
-
 uint8_t MMU::read8(uint16_t address) {
-	//id love to try out the ... operator but Im pretty sure thats GNU only
 	if (address >= 0x0000 && address <= 0x3FFF) {
 		//if (romEnabled_FLAG) {
 		//	//serve from bootrom
