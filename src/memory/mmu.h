@@ -2,10 +2,12 @@
 #include <cstdint>
 #include "Cartridge.h"
 #include "../cpu/timer.h"
+#include "../memory/ppu.h"
 
 class MMU {
 private:
 	timer timer_;
+	PPU ppu_;
 
 	bool romEnabled_FLAG = true;
 	Cartridge& cart;
@@ -19,6 +21,11 @@ private:
 	uint8_t buffer = {0};
 	std::string serialOutput;
 
+
+	uint8_t dmaReg = 0xFF;
+	uint8_t joypadSelect = 0xCF; // Bits 4 & 5 select rows
+	uint8_t dpadState = 0x0F;    // 1111 = all unpressed
+	uint8_t actionState = 0x0F;  // 1111 = all unpressed
 	
 
 public:
@@ -32,4 +39,6 @@ public:
 
 	void requestInterrupt(uint8_t bit);
 	void clearInterrupt(uint8_t bit);
+	void handleInput(bool isDpad, uint8_t bit, bool isPressed);
+	PPU& getPPU() { return ppu_; }
 };

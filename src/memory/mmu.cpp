@@ -4,7 +4,7 @@
 #include "..//cpu/timer.h"
 
 
-MMU::MMU(Cartridge& cartridge) : cart(cartridge) {}
+MMU::MMU(Cartridge& cartridge) : cart(cartridge), ppu_(vram,oam) {}
 
 
 uint8_t MMU::read8(uint16_t address) {
@@ -56,25 +56,26 @@ uint8_t MMU::read8(uint16_t address) {
 		return 0xFF;
 	}
 	else if (address >= 0xFF00 && address <= 0xFF7F) {
-		//IO need that 
+		if (address == 0xFF00) {
+			uint8_t result = joypadSelect | 0xCF;
+			if ((joypadSelect & 0x10) == 0) result &= dpadState;
+			if ((joypadSelect & 0x20) == 0) result &= actionState;
+			return result;
+		}
 		if (address == 0xFF0F) {
-			return if_reg | 0xE0;   // upper 3 bits always read as 1
+			return if_reg | 0xE0;
+		}
+		if (address == 0xFF46) return dmaReg;
+		if (address >= 0xFF40 && address <= 0xFF4B) {
+			return ppu_.readRegister(address);
 		}
 		if (address == 0xFF01) {
 			return this->buffer;
 		}
-		if (address == 0xFF04) {
-			return timer_.getDIV();
-		}
-		if (address == 0xFF05) {
-			return timer_.getTIMA();
-		}
-		if (address == 0xFF06) {
-			return timer_.getTMA();
-		}
-		if (address == 0xFF07) {
-			return timer_.getTAC();
-		}
+		if (address == 0xFF04) return timer_.getDIV();
+		if (address == 0xFF05) return timer_.getTIMA();
+		if (address == 0xFF06) return timer_.getTMA();
+		if (address == 0xFF07) return timer_.getTAC();
 		return 0xFF;
 	}
 	else if (address >= 0xFF80 && address <= 0xFFFE) {
@@ -85,6 +86,8 @@ uint8_t MMU::read8(uint16_t address) {
 		//interupt enable
 		return ie;
 	}
+
+	
 	else {
 		return 0xFF;
 	}
@@ -124,7 +127,7 @@ void MMU::write8(uint16_t address, uint8_t value) {
 	}
 	else if (address >= 0xFE00 && address <= 0xFE9F) {
 		//OAM need ppu
-		oam[address - 0xFE00] - value;
+		oam[address - 0xFE00] = value;
 	}
 	else if (address >= 0xFEA0 && address <= 0xFEFF) {
 		//prohibited
@@ -133,9 +136,24 @@ void MMU::write8(uint16_t address, uint8_t value) {
 
 	}
 	else if (address >= 0xFF00 && address <= 0xFF7F) {
-		//IO need that 
+		if (address == 0xFF00) {
+			joypadSelect = (joypadSelect & 0x0F) | (value & 0x30);
+			return;
+		}
 		if (address == 0xFF0F) {
-			if_reg = value & 0x1F;  // only lower 5 bits are writable
+			if_reg = value & 0x1F;
+			return;
+		}
+		if (address == 0xFF46) {
+			dmaReg = value;
+			uint16_t sourceBase = (uint16_t)value << 8;
+			for (int i = 0; i < 0xA0; i++) {
+				oam[i] = read8(sourceBase + i);
+			}
+			return;
+		}
+		if (address >= 0xFF40 && address <= 0xFF4B) {
+			ppu_.writeRegister(address, value);
 			return;
 		}
 		if (address == 0xFF01) {
@@ -151,20 +169,11 @@ void MMU::write8(uint16_t address, uint8_t value) {
 			}
 		}
 		if (address == 0xFF04) {
-			if (timer_.handleDIV()) {
-				requestInterrupt(2);
-			}
+			if (timer_.handleDIV()) requestInterrupt(2);
 		}
-		if (address == 0xFF05) {
-			timer_.setTIMA(value);
-		}
-		if (address == 0xFF06) {
-			timer_.setTMA(value);
-		}
-		if (address == 0xFF07) {
-			timer_.setTAC(value);
-		}
-
+		if (address == 0xFF05) timer_.setTIMA(value);
+		if (address == 0xFF06) timer_.setTMA(value);
+		if (address == 0xFF07) timer_.setTAC(value);
 	}
 	else if (address >= 0xFF80 && address <= 0xFFFE) {
 		//high ram
@@ -190,5 +199,29 @@ void MMU::tick(uint8_t cycles) {
 	if (timer_.tick(cycles)) {
 		requestInterrupt(2);
 	}
+	uint8_t ppuInts = ppu_.tick(cycles);
+	if (ppuInts & 0x01) {
+		requestInterrupt(0); // VBlank
+	}
+	if (ppuInts & 0x02) {
+		requestInterrupt(1); // STAT
+	}
 
+}
+
+void MMU::handleInput(bool isDpad, uint8_t bit, bool isPressed) {
+	uint8_t& state = isDpad ? dpadState : actionState;
+	bool wasUnpressed = (state & (1 << bit)) != 0;
+
+	if (isPressed) {
+		state &= ~(1 << bit); // 0 = pressed
+		// Check if this specific group is currently selected by the CPU
+		bool isSelected = isDpad ? !(joypadSelect & 0x10) : !(joypadSelect & 0x20);
+		if (wasUnpressed && isSelected) {
+			requestInterrupt(4); // Joypad interrupt
+		}
+	}
+	else {
+		state |= (1 << bit);  // 1 = unpressed
+	}
 }
