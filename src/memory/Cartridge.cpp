@@ -127,8 +127,60 @@ void Cartridge::loadROM(const char* filePath){
 
 
 const uint8_t Cartridge::read(uint16_t address) {
-	return romByteVector[address];
+	if (address >= 0x0000 && address <= 0x3FFF) {
+		if (modeSelect == 0x00) {
+			return romByteVector[address];
+		}
+		else if (modeSelect == 0x01) {
+			auto x = (bankReg2 << 5) & (numRomBanks - 1);
+			return romByteVector[x * 0x4000 + address];
+		}
+	}
+	if (address >= 0x4000 && address <= 0x7FFF) {
+		uint8_t lowBits = (romBankLow == 0) ? 1 : romBankLow;
+		auto bank = lowBits | bankReg2 << 5;
+		bank &= (numRomBanks - 1);
+		return romByteVector[bank * 0x4000 + (address - 0x4000)];
+	}
+
+	if (address >= 0xA000 && address <= 0xBFFF) {
+		if (ramEnabled && numRamBanks > 0) {
+			uint8_t ramBank = (modeSelect ? bankReg2 : 0) & (numRamBanks - 1);
+			return ramByteVector[ramBank * 0x2000 + (address - 0xA000)];
+		}
+		else {
+			return 0xFF;
+			}
+		}
+	else{
+		return 0xFF;
+	}
+
+	return 0xFF;
 }
+
+void Cartridge::write(uint16_t address, uint8_t value) {
+	if (address >= 0x0000 && address <= 0x1FFF) {
+		ramEnabled = ((value & 0x0F) == 0x0A);
+	}
+	else if (address >= 0x2000 && address <= 0x3FFF) {
+		romBankLow = value & 0x1F;
+	}
+	else if (address >= 0x4000 && address <= 0x5FFF) {
+		bankReg2 = value & 0x03;
+	}
+	else if (address >= 0x6000 && address <= 0x7FFF) {
+		modeSelect = value & 0x01;
+	}
+	else if (address >= 0xA000 && address <= 0xBFFF) {
+		if (ramEnabled && numRamBanks > 0) {
+			uint8_t ramBank = (modeSelect ? bankReg2 : 0) & (numRamBanks - 1);
+			ramByteVector[ramBank * 0x2000 + (address - 0xA000)] = value;
+		}
+	}
+
+}
+
 
 std::string Cartridge::getCartridgeType() const{
 	const std::unordered_map<uint8_t, std::string> cartridge_types = {

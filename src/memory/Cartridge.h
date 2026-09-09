@@ -39,8 +39,10 @@ private:
 public:
 	void loadROM(const char* filePath);
 	const uint8_t read(uint16_t address);
-	
+	void write(uint16_t address, uint8_t value);
+
 	std::string getCartridgeType() const;
 	std::string getTitle() const;
+
 
 };

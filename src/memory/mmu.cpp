@@ -28,11 +28,11 @@ uint8_t MMU::read8(uint16_t address) {
 	}
 	else if (address >= 0x8000 && address <= 0x9FFF) {
 		//VRAM
-		return 0xFF;
+		return vram[address - 0x8000];
 	}
 	else if (address >= 0xA000 && address <= 0xBFFF) {
 		//external cart ram
-		return 0xFF;
+		return cart.read(address);
 	}
 	else if (address >= 0xC000 && address <= 0xCFFF) {
 		//bank 0
@@ -47,8 +47,8 @@ uint8_t MMU::read8(uint16_t address) {
 		return wram[address - 0xE000]; 
 	}
 	else if (address >= 0xFE00 && address <= 0xFE9F) {
-		//OAM need ppu
-		return 0xFF;
+		//OAM 
+		return oam[address - 0xFE00];
 	}
 	else if (address >= 0xFEA0 && address <= 0xFEFF) {
 		//prohibited
@@ -93,19 +93,20 @@ uint8_t MMU::read8(uint16_t address) {
 
 void MMU::write8(uint16_t address, uint8_t value) {
 	if (address >= 0x0000 && address <= 0x3FFF) {
-		//stub it
+		cart.write(address, value);
 
 	}
 	else if (address >= 0x4000 && address <= 0x7FFF) {
-
+		cart.write(address, value);
 
 	}
 	else if (address >= 0x8000 && address <= 0x9FFF) {
 		//VRAM
-
+		vram[address - 0x8000] = value;
 	}
 	else if (address >= 0xA000 && address <= 0xBFFF) {
 		//external cart ram
+		cart.write(address, value);
 
 	}
 	else if (address >= 0xC000 && address <= 0xCFFF) {
@@ -123,7 +124,7 @@ void MMU::write8(uint16_t address, uint8_t value) {
 	}
 	else if (address >= 0xFE00 && address <= 0xFE9F) {
 		//OAM need ppu
-
+		oam[address - 0xFE00] - value;
 	}
 	else if (address >= 0xFEA0 && address <= 0xFEFF) {
 		//prohibited
