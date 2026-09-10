@@ -62,7 +62,7 @@ ROMs are loaded from a `rom/` folder relative to the executable's working direct
 
 ## Testing
 
-Validated against [Blargg's test ROMs](https://github.com/retrymankind/blargg-gb-tests) — `cpu_instrs.gb` passes all 11 sub-tests (registers, timing, interrupts, etc.).
+Validated against [Blargg's test ROMs](https://github.com/retrio/gb-test-roms) — `cpu_instrs.gb` passes all 11 sub-tests (registers, timing, interrupts, etc.).
 
 ## Roadmap
 
