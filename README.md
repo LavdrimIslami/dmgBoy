@@ -4,6 +4,11 @@ A Game Boy (DMG) emulator written in C++, built from scratch as a learning proje
 
 ![platform](https://img.shields.io/badge/platform-Windows-blue) ![language](https://img.shields.io/badge/language-C%2B%2B-orange)
 
+
+<img width="639" height="511" alt="image" src="https://github.com/user-attachments/assets/79356509-7d28-44dd-b931-2318fc5f1cd0" />
+
+<img width="639" height="506" alt="image" src="https://github.com/user-attachments/assets/142f9bb1-804f-40d4-86d1-4b56c5a67ba9" />
+
 ## Status
 
 Core CPU, timer, MBC1 cartridge support, and a working PPU are implemented. Several commercial games (Super Mario Land, Tetris) boot and are playable.
